@@ -1,0 +1,19 @@
+services:
+  vision-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-vision-monitor
+    ports:
+      - "8000:8000"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - YOLO_MODEL=yolo26n.pt
+      - YOLO_DEVICE=cpu
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G

@@ -1,0 +1,33 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Project
+.env
+*.onnx
+*.pt
+*.engine
+reports/
+runs/
+
+# Docker
+.dockerignore
