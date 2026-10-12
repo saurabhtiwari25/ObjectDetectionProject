@@ -1,17 +1,3 @@
-"""Live webcam object detection demo.
-
-Runs YOLO26n on webcam frames and displays annotated output with OpenCV.
-
-Controls:
-    q / ESC  — Quit
-    s        — Save current annotated frame to 'snapshot.jpg'
-
-Usage:
-    python scripts/run_webcam.py
-    python scripts/run_webcam.py --source path/to/video.mp4
-    python scripts/run_webcam.py --source path/to/image.jpg
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -24,7 +10,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-# Add src to path for direct script execution
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from vision_monitor.camera import CameraSource
@@ -36,30 +21,26 @@ from vision_monitor.pipeline import PipelineOutput, VisionPipeline
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(name)s | %(message)s")
 logger = logging.getLogger(__name__)
 
-# ─── Visualization ───────────────────────────────────────────────────────
-
 COLORS = [
-    (0, 255, 127),  # Spring green
-    (255, 191, 0),  # Deep sky blue
-    (0, 165, 255),  # Orange
-    (255, 0, 255),  # Magenta
-    (0, 255, 255),  # Yellow
-    (255, 105, 180),  # Hot pink
-    (50, 205, 50),  # Lime green
-    (255, 0, 0),  # Blue
-    (203, 192, 255),  # Pink
+    (0, 255, 127),
+    (255, 191, 0),
+    (0, 165, 255),
+    (255, 0, 255),
+    (0, 255, 255),
+    (255, 105, 180),
+    (50, 205, 50),
+    (255, 0, 0),
+    (203, 192, 255),
 ]
 
 
 def draw_pipeline_output(frame: np.ndarray, output: PipelineOutput) -> np.ndarray:
-    """Draw bounding boxes, distance estimates, and proximity alerts on a frame."""
     annotated = frame.copy()
     h, w = annotated.shape[:2]
 
     any_alert = any(det.alert for det in output.result.detections)
 
     for det in output.result.detections:
-        # Distance label
         depth_tag = " [SIM]" if output.is_depth_simulated else ""
         dist_str = f" | {det.distance_m:.1f}m{depth_tag}" if det.distance_m is not None else ""
 
@@ -67,12 +48,10 @@ def draw_pipeline_output(frame: np.ndarray, output: PipelineOutput) -> np.ndarra
         color = COLORS[color_idx]
         label = f"{det.class_name} {det.confidence:.0%}{dist_str}"
 
-        # Bounding box
         x1, y1 = int(det.bbox.x1), int(det.bbox.y1)
         x2, y2 = int(det.bbox.x2), int(det.bbox.y2)
         cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
 
-        # Label background
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 0.55
         thickness = 1
@@ -90,7 +69,6 @@ def draw_pipeline_output(frame: np.ndarray, output: PipelineOutput) -> np.ndarra
             thickness,
         )
 
-    # ─── Status HUD Bar ───
     cv2.rectangle(annotated, (0, 0), (w, 40), (20, 20, 20), -1)
 
     mode_label = "MODE A (SIMULATED DEPTH)" if output.is_depth_simulated else "MODE B (OAK-D DEPTH)"
@@ -124,9 +102,6 @@ def draw_pipeline_output(frame: np.ndarray, output: PipelineOutput) -> np.ndarra
     return annotated
 
 
-# ─── Main Loop ───────────────────────────────────────────────────────────
-
-
 def main():
     parser = argparse.ArgumentParser(description="Smart Vision Monitor — Pipeline Demo")
     parser.add_argument("--source", default=0, help="Camera index, image path, or video path")
@@ -135,7 +110,6 @@ def main():
     parser.add_argument("--alert-dist", type=float, default=2.0, help="Alert threshold in meters")
     args = parser.parse_args()
 
-    # Resolve source: integer camera index or file path
     source = args.source
     with contextlib.suppress(ValueError, TypeError):
         source = int(source)

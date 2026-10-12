@@ -1,28 +1,9 @@
-"""Shared data models (schemas) for detection results.
-
-Design decisions:
-- These are plain Pydantic models — no business logic, just data shape.
-- Separating schemas from logic means detector.py, alerts.py, and api.py
-  all share the same contract without importing each other.
-- Optional fields (distance_m, alert) start as None. Later sprints
-  will populate them from depth estimation and alert logic.
-- BoundingBox uses (x1, y1, x2, y2) format — top-left and bottom-right
-  corners in pixel coordinates. This matches YOLO's output format and
-  OpenCV's rectangle drawing convention.
-"""
-
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
 
 class BoundingBox(BaseModel):
-    """Axis-aligned bounding box in pixel coordinates.
-
-    (x1, y1) = top-left corner
-    (x2, y2) = bottom-right corner
-    Origin is top-left of the image, x increases right, y increases down.
-    """
 
     x1: float
     y1: float
@@ -47,7 +28,6 @@ class BoundingBox(BaseModel):
 
 
 class Detection(BaseModel):
-    """A single detected object — the core data unit flowing through the pipeline."""
 
     class_name: str = Field(description="Human-readable class label, e.g. 'person'")
     confidence: float = Field(ge=0.0, le=1.0, description="Model confidence score")
@@ -63,7 +43,6 @@ class Detection(BaseModel):
 
 
 class DetectionResult(BaseModel):
-    """Complete result from one frame of inference."""
 
     detections: list[Detection] = Field(default_factory=list)
     inference_time_ms: float = Field(ge=0.0, description="Model inference time in milliseconds")

@@ -1,15 +1,3 @@
-"""Evaluate object detection quality against ground-truth annotations.
-
-Measures:
-- Precision, Recall, F1-Score at IoU threshold (default 0.5)
-- Per-class Average Precision (AP) using 11-point interpolation
-- Mean Average Precision (mAP)
-- True Positives, False Positives, False Negatives
-
-Usage:
-    python scripts/evaluate_quality.py
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -85,20 +73,17 @@ def main() -> None:
     print(f"Conf Thresh : {args.conf_threshold}")
     print("-" * 65)
 
-    # Load image
     frame = cv2.imread(str(args.image))
     if frame is None:
         logger.error("Failed to read image %s", args.image)
         sys.exit(1)
 
-    # Load annotations
     ground_truths = load_ground_truth(args.annotations)
     print(f"Loaded {len(ground_truths)} ground-truth annotation(s):")
     for idx, gt in enumerate(ground_truths, 1):
         box_str = f"[{gt.bbox.x1:.1f}, {gt.bbox.y1:.1f}, {gt.bbox.x2:.1f}, {gt.bbox.y2:.1f}]"
         print(f"  {idx}. {gt.class_name:<10} {box_str}")
 
-    # Run inference
     detector_settings = DetectorSettings(confidence=args.conf_threshold)
     detector = Detector(detector_settings)
     detector.load()
@@ -110,7 +95,6 @@ def main() -> None:
         box_str = f"[{b.x1:.1f}, {b.y1:.1f}, {b.x2:.1f}, {b.y2:.1f}]"
         print(f"  {idx}. {det.class_name:<10} (conf: {det.confidence:.2f}) {box_str}")
 
-    # Evaluate quality
     report = evaluate_quality(
         predictions=result.detections,
         ground_truths=ground_truths,
@@ -136,7 +120,6 @@ def main() -> None:
             stats = f"(GTs: {cap.num_ground_truths}, Preds: {cap.num_predictions})"
             print(f"  {cap.class_name:<12} : AP = {cap.ap:.4f} {stats}")
 
-    # Save report
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     report_dict = {
         "image": str(args.image),

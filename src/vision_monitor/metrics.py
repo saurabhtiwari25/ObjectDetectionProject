@@ -1,5 +1,3 @@
-"""Performance telemetry, percentile statistics, and benchmark runner."""
-
 from __future__ import annotations
 
 import csv
@@ -20,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class LatencySummary:
-    """Statistical summary of execution latencies."""
 
     count: int
     mean_ms: float
@@ -34,7 +31,6 @@ class LatencySummary:
 
 @dataclass(frozen=True)
 class BenchmarkRecord:
-    """A single benchmark trial record for CSV export and MATLAB ingest."""
 
     model_name: str
     device: str
@@ -46,12 +42,11 @@ class BenchmarkRecord:
     mean_total_ms: float
     throughput_fps: float
     peak_ram_mb: float
-    frame_bytes: int  # Raw frame size in bytes (H * W * channels)
-    bandwidth_mbps: float  # Data throughput: MB/s = frame_bytes * FPS / 1e6
+    frame_bytes: int  
+    bandwidth_mbps: float
 
 
 def compute_latency_summary(latencies_ms: list[float]) -> LatencySummary:
-    """Calculate descriptive percentiles and throughput from raw latency samples."""
     if not latencies_ms:
         raise ValueError("Cannot compute latency summary from an empty sample list")
 
@@ -84,7 +79,6 @@ def run_benchmark(
     model_name: str = "yolo26n.pt",
     device: str = "cpu",
 ) -> BenchmarkRecord:
-    """Execute a controlled benchmarking session."""
     logger.info("Warming up benchmark (%d runs)...", warmup_runs)
     for _ in range(warmup_runs):
         pipeline.process_frame(test_image)
@@ -111,7 +105,6 @@ def run_benchmark(
     h, w = test_image.shape[:2]
     img_size = max(h, w)
 
-    # Bandwidth: raw frame bytes * throughput = data processed per second
     frame_bytes = test_image.nbytes  # H * W * channels (e.g. 640*640*3)
     bandwidth_mbps = round(frame_bytes * tot_summary.throughput_fps / 1_000_000, 2)
 
@@ -132,7 +125,6 @@ def run_benchmark(
 
 
 def export_benchmark_csv(records: list[BenchmarkRecord], filepath: Path | str) -> None:
-    """Save benchmark records to a standard CSV file."""
     path = Path(filepath)
     path.parent.mkdir(parents=True, exist_ok=True)
 

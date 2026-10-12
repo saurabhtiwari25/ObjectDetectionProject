@@ -1,13 +1,3 @@
-# ruff: noqa: E501
-"""Smart Vision Monitor — Streamlit Dashboard.
-
-Ultra-polished, modern computer vision dashboard inspired by shadcn/ui.
-Features real-time YOLO object detection, depth estimation, and proximity telemetry.
-
-Run with:
-    .venv\\Scripts\\streamlit.exe run app.py
-"""
-
 from __future__ import annotations
 
 import contextlib
@@ -28,8 +18,6 @@ from vision_monitor.metrics import compute_latency_summary
 from vision_monitor.pipeline import VisionPipeline
 from vision_monitor.quality import evaluate_quality, load_ground_truth
 
-# ─── Page Config ─────────────────────────────────────────────────────────
-
 st.set_page_config(
     page_title="Smart Vision Monitor",
     page_icon=":material/visibility:",
@@ -37,18 +25,14 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── shadcn-Inspired Custom CSS Theme ─────────────────────────────────────
-
 SHADCN_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
-/* Base Reset & Typography */
 html, body, .stApp {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
-/* Strictly preserve Streamlit and Google Material Icon font ligatures */
 [data-testid="stIconMaterial"],
 [data-testid="stIcon"],
 .material-symbols-rounded,
@@ -75,12 +59,10 @@ section[data-testid="stFileUploadDropzone"] button [data-testid="stIconMaterial"
     text-rendering: optimizeLegibility !important;
 }
 
-/* Hide deploy button */
 .stDeployButton, [data-testid="stDeployButton"] {
     display: none !important;
 }
 
-/* Background & Surfaces */
 .stApp {
     background-color: #09090b !important;
     color: #f4f4f5 !important;
@@ -90,7 +72,6 @@ header[data-testid="stHeader"] {
     background: transparent !important;
 }
 
-/* Sidebar Width — 20% Narrower than Streamlit default (21rem -> 16.8rem / 268px) */
 [data-testid="stSidebar"], section[data-testid="stSidebar"] {
     min-width: 268px !important;
     max-width: 268px !important;
@@ -108,7 +89,6 @@ section[data-testid="stSidebar"] hr {
     margin: 1rem 0 !important;
 }
 
-/* Typography Hierarchy */
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Inter', sans-serif !important;
     font-weight: 600 !important;
@@ -120,7 +100,6 @@ p, label {
     color: #d4d4d8 !important;
 }
 
-/* shadcn Badges */
 .shadcn-badge {
     display: inline-flex;
     align-items: center;
@@ -178,7 +157,6 @@ p, label {
     letter-spacing: 0.02em;
 }
 
-/* shadcn Card Surfaces */
 .shadcn-card {
     background-color: #121215;
     border: 1px solid #27272a;
@@ -193,7 +171,6 @@ p, label {
     border-color: #3f3f46;
 }
 
-/* KPI Telemetry Cards */
 .shadcn-metric-card {
     background-color: #141418;
     border: 1px solid #27272a;
@@ -230,7 +207,6 @@ p, label {
     color: #a1a1aa;
 }
 
-/* Detection List Row */
 .shadcn-det-row {
     display: flex;
     align-items: center;
@@ -248,7 +224,6 @@ p, label {
     border-color: #3f3f46;
 }
 
-/* Tabs Styling — shadcn Tab Navigation with Generous Spacing */
 div[data-testid="stTabs"] [role="tablist"],
 [role="tablist"] {
     display: flex !important;
@@ -296,7 +271,6 @@ div[data-testid="stTabs"] [role="tab"][aria-selected="true"],
     box-shadow: none !important;
 }
 
-/* Ensure no stray vertical lines or BaseWeb borders */
 div[data-testid="stTabs"] [role="tab"]::before,
 div[data-testid="stTabs"] [role="tab"]::after,
 [role="tab"]::before,
@@ -312,7 +286,6 @@ div[data-baseweb="tab-border"],
     opacity: 0 !important;
 }
 
-/* Buttons — Primary shadcn Button */
 button[kind="primary"],
 [data-testid="stBaseButton-primary"],
 .stButton > button[kind="primary"],
@@ -378,7 +351,6 @@ button[kind="primary"]:active *,
     color: #000000 !important;
 }
 
-/* Secondary Button */
 button[kind="secondary"] {
     background-color: #18181b !important;
     color: #f4f4f5 !important;
@@ -395,7 +367,6 @@ button[kind="secondary"]:hover {
     color: #ffffff !important;
 }
 
-/* Inputs, Selects, Number Controls */
 div[data-baseweb="input"], div[data-baseweb="select"] {
     background-color: #121215 !important;
     border: 1px solid #27272a !important;
@@ -412,7 +383,6 @@ input {
     color: #fafafa !important;
 }
 
-/* File Dropzone */
 div[data-testid="stFileUploader"], section[data-testid="stFileUploadDropzone"] {
     background-color: #121215 !important;
     border: 1px dashed #27272a !important;
@@ -428,7 +398,6 @@ section[data-testid="stFileUploadDropzone"] small {
     color: #71717a !important;
 }
 
-/* Image Tab: 10MB file limit display */
 section[aria-label="Drop image file here or browse"] div:not(button *) > span,
 section[aria-label="Drop image file here or browse"] small {
     font-size: 0 !important;
@@ -483,7 +452,6 @@ div[data-testid="stFileUploader"] button [data-testid="stIconMaterial"] {
     justify-content: center !important;
 }
 
-/* Native Metrics Override */
 div[data-testid="stMetric"] {
     background-color: #121215 !important;
     border: 1px solid #27272a !important;
@@ -506,7 +474,6 @@ div[data-testid="stMetricValue"] {
     font-family: 'JetBrains Mono', monospace !important;
 }
 
-/* Alerts / Callouts */
 div[data-testid="stAlert"] {
     border-radius: 8px !important;
     border: 1px solid #27272a !important;
@@ -514,7 +481,6 @@ div[data-testid="stAlert"] {
     color: #f4f4f5 !important;
 }
 
-/* Tables */
 div[data-testid="stTable"], table {
     border: 1px solid #27272a !important;
     border-radius: 8px !important;
@@ -540,7 +506,6 @@ td {
     padding: 0.5rem 0.75rem !important;
 }
 
-/* Progress Bar */
 div[data-testid="stProgress"] > div > div > div > div {
     background-color: #fafafa !important;
 }
@@ -548,10 +513,6 @@ div[data-testid="stProgress"] > div > div > div > div {
 """
 
 st.markdown(SHADCN_CSS, unsafe_allow_html=True)
-
-
-# ─── Cached Model Loading ───────────────────────────────────────────────
-
 
 @st.cache_resource
 def load_pipeline(confidence: float, alert_dist: float) -> VisionPipeline:
@@ -573,19 +534,15 @@ def load_pipeline(confidence: float, alert_dist: float) -> VisionPipeline:
         alert_settings=settings.alerts,
     )
 
-
-# ─── Drawing Utility ─────────────────────────────────────────────────────
-
 COLORS = [
-    (52, 211, 153),  # Emerald 400
-    (96, 165, 250),  # Blue 400
-    (251, 146, 60),  # Orange 400
-    (192, 132, 252),  # Purple 400
-    (250, 204, 21),  # Yellow 400
-    (244, 114, 182),  # Pink 400
-    (45, 212, 191),  # Teal 400
+    (52, 211, 153),
+    (96, 165, 250),
+    (251, 146, 60),
+    (192, 132, 252),
+    (250, 204, 21),
+    (244, 114, 182),
+    (45, 212, 191),
 ]
-
 
 def record_telemetry(output, frame_shape: tuple[int, ...] | None = None) -> None:
     """Record live pipeline execution telemetry into session state."""
@@ -602,7 +559,6 @@ def record_telemetry(output, frame_shape: tuple[int, ...] | None = None) -> None
     tot_ms = float(output.total_time_ms)
     post_ms = max(0.1, tot_ms - (pre_ms + inf_ms + dep_ms))
 
-    # Standard JSON telemetry frame payload size: base envelope + detection records
     telemetry_bytes = 180 + (det_count * 96)
 
     st.session_state["telemetry_history"].append(
@@ -623,7 +579,6 @@ def record_telemetry(output, frame_shape: tuple[int, ...] | None = None) -> None
     if len(st.session_state["telemetry_history"]) > 500:
         st.session_state["telemetry_history"] = st.session_state["telemetry_history"][-500:]
 
-
 def draw_results(frame: np.ndarray, output) -> np.ndarray:
     """Draw bounding boxes and labels on the frame with crisp typography."""
     annotated = frame.copy()
@@ -633,7 +588,6 @@ def draw_results(frame: np.ndarray, output) -> np.ndarray:
         x1, y1 = int(det.bbox.x1), int(det.bbox.y1)
         x2, y2 = int(det.bbox.x2), int(det.bbox.y2)
 
-        # Crisp bounding box
         cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
 
         dist_str = f" | {det.distance_m:.1f}m" if det.distance_m is not None else ""
@@ -644,7 +598,6 @@ def draw_results(frame: np.ndarray, output) -> np.ndarray:
         font_thickness = 1
         (tw, th), _ = cv2.getTextSize(label, font, font_scale, font_thickness)
 
-        # Label pill header
         label_y1 = max(0, y1 - th - 8)
         cv2.rectangle(
             annotated,
@@ -667,11 +620,9 @@ def draw_results(frame: np.ndarray, output) -> np.ndarray:
 
     return annotated
 
-
 def draw_hud(annotated: np.ndarray, output, fps: float = 0.0) -> np.ndarray:
     """Draw a minimalist HUD status bar on top of live feeds."""
     h, w = annotated.shape[:2]
-    # Subtle dark HUD bar
     cv2.rectangle(annotated, (0, 0), (w, 38), (14, 14, 18), -1)
 
     mode_label = "MODE A (SIMULATED)" if output.is_depth_simulated else "MODE B (OAK-D STEREO)"
@@ -726,7 +677,6 @@ def draw_hud(annotated: np.ndarray, output, fps: float = 0.0) -> np.ndarray:
 
     return annotated
 
-
 def render_detection_view(
     frame: np.ndarray,
     pipeline_inst: VisionPipeline,
@@ -742,7 +692,6 @@ def render_detection_view(
     col1, col2 = st.columns([3, 2], gap="large")
 
     with col1:
-        # Viewport Header Card
         st.markdown(
             f"""
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -764,7 +713,6 @@ def render_detection_view(
     with col2:
         alerts = [d for d in output.result.detections if d.alert]
 
-        # Status Alert Box
         if alerts:
             st.markdown(
                 f"""
@@ -800,7 +748,6 @@ def render_detection_view(
                 unsafe_allow_html=True,
             )
 
-        # 4-Grid Telemetry Cards
         frame_bytes = frame.nbytes
         fps_equiv = 1000.0 / output.total_time_ms if output.total_time_ms > 0 else 0.0
         bw_mbps = (frame_bytes * fps_equiv) / 1_000_000
@@ -833,7 +780,6 @@ def render_detection_view(
             unsafe_allow_html=True,
         )
 
-        # Detected Entities List
         st.markdown(
             f"""
             <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin-bottom: 8px;">
@@ -880,9 +826,6 @@ def render_detection_view(
                 unsafe_allow_html=True,
             )
 
-
-# ─── Sidebar Controls ───────────────────────────────────────────────────
-
 with st.sidebar:
     st.html(
         """<div style="margin-bottom: 1.25rem; padding-bottom: 0.875rem; border-bottom: 1px solid #27272a;">
@@ -916,9 +859,6 @@ with st.sidebar:
         step=0.5,
     )
 
-
-# ─── Hero Header ────────────────────────────────────────────────────────
-
 st.markdown(
     """
     <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #27272a;">
@@ -935,8 +875,6 @@ st.markdown(
 
 pipeline = load_pipeline(confidence, alert_dist)
 
-# ─── Tab Navigation ──────────────────────────────────────────────────────
-
 tab_upload, tab_video, tab_webcam, tab_perf = st.tabs(
     [
         ":material/image: Image",
@@ -945,8 +883,6 @@ tab_upload, tab_video, tab_webcam, tab_perf = st.tabs(
         ":material/analytics: Metrics",
     ]
 )
-
-# ─── Tab 1: Image Analysis ──────────────────────────────────────────────
 
 with tab_upload:
     st.markdown(
@@ -974,8 +910,6 @@ with tab_upload:
                 st.error("Failed to decode image byte stream.")
             else:
                 render_detection_view(frame, pipeline, alert_dist)
-
-# ─── Tab 2: Video Stream ────────────────────────────────────────────────
 
 with tab_video:
     st.markdown(
@@ -1069,7 +1003,6 @@ with tab_video:
                 processed = 0
                 t_start = time.perf_counter()
 
-                # Calculate frame pacing delay for slow motion
                 delay = 0.0
                 if playback_rate == "0.25x (Ultra Slow)":
                     delay = 0.12
@@ -1130,8 +1063,6 @@ with tab_video:
 
         with contextlib.suppress(OSError):
             os.unlink(tmp_path)
-
-# ─── Tab 3: Live Webcam ─────────────────────────────────────────────────
 
 with tab_webcam:
     st.markdown(
@@ -1224,8 +1155,6 @@ with tab_webcam:
             stop_info.empty()
             st.info(f"Stream concluded — {frame_count} frames recorded at {fps:.1f} FPS.")
 
-# ─── Tab 4: Telemetry & Quality ─────────────────────────────────────────
-
 with tab_perf:
     st.markdown(
         """
@@ -1249,14 +1178,12 @@ with tab_perf:
     )
 
     if perf_section == "Real-Time Hardware & Latency Stream":
-        # 1. Real-time system hardware metrics via psutil
         proc = psutil.Process()
         proc_ram_mb = proc.memory_info().rss / (1024 * 1024)
         sys_cpu = psutil.cpu_percent(interval=None)
         vmem = psutil.virtual_memory()
         cpu_cores = os.cpu_count() or 1
 
-        # Auto-seed with real live warmup frames if session history is empty
         if "telemetry_history" not in st.session_state or not st.session_state["telemetry_history"]:
             bus_path = os.path.join("sample_data", "bus.jpg")
             if os.path.exists(bus_path):
@@ -1273,7 +1200,6 @@ with tab_perf:
         summary = compute_latency_summary(tot_latencies)
         inf_summary = compute_latency_summary(inf_latencies)
 
-        # Telemetry KPI Grid
         st.html(
             f"""
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem;">
@@ -1301,7 +1227,6 @@ with tab_perf:
             """
         )
 
-        # ─── Feature 1: Sub-Millisecond Execution Waterfall & 30 FPS Frame Budget ───
         avg_tot = max(0.1, summary.mean_ms)
         avg_pre = float(np.mean([h.get("preprocess_ms", 0.6) for h in history])) if history else 0.6
         avg_inf = float(np.mean([h.get("inference_ms", 20.0) for h in history])) if history else 20.0
@@ -1314,7 +1239,6 @@ with tab_perf:
         budget_used_pct = min(100.0, (avg_tot / sla_budget_ms) * 100.0)
         headroom_ms = sla_budget_ms - avg_tot
 
-        # Scale axis and markers for professional SLA monitor
         max_axis_ms = max(60.0, float(avg_tot * 1.35))
         sla_pct = min(92.0, max(8.0, (33.33 / max_axis_ms) * 100.0))
         fps60_pct = min(92.0, max(8.0, (16.67 / max_axis_ms) * 100.0))
@@ -1340,7 +1264,6 @@ with tab_perf:
         p_alert = max(1.0, (avg_alert / sum_stages) * 100.0)
         p_post = max(1.0, 100.0 - (p_pre + p_inf + p_dep + p_alert))
 
-        # ─── Feature 2: Edge Bandwidth Funnel & 99.9% Data Reduction ───
         active_fps = summary.throughput_fps if summary.throughput_fps > 0 else 15.0
         avg_frame_bytes = float(np.mean([h.get("frame_bytes", 640 * 640 * 3) for h in history])) if history else 640 * 640 * 3
         avg_telem_bytes = float(np.mean([h.get("telemetry_bytes", 280) for h in history])) if history else 280
@@ -1364,7 +1287,6 @@ with tab_perf:
         st.html(
             f"""
             <div class="shadcn-card" style="margin-bottom: 1.25rem;">
-                <!-- Section 1 Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
                     <div>
                         <div style="font-size: 0.8125rem; font-weight: 600; color: #fafafa; letter-spacing: -0.01em;">
@@ -1377,7 +1299,6 @@ with tab_perf:
                     {sla_badge}
                 </div>
 
-                <!-- Bar 1: Precision SLA Target Bar with Markers -->
                 <div style="margin-bottom: 22px;">
                     <div style="position: relative; height: 14px; font-size: 0.65rem; color: #71717a; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">
                         <span style="position: absolute; left: 0;">0ms</span>
@@ -1396,7 +1317,6 @@ with tab_perf:
                     </div>
                 </div>
 
-                <!-- Bar 2: Segmented Stage Waterfall -->
                 <div style="padding-top: 14px; border-top: 1px solid #27272a;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1aa;">
@@ -1529,7 +1449,6 @@ with tab_perf:
             """
         )
 
-        # Real-time Rolling Latency Trend Chart
         st.html(
             """
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.25rem 0 0.5rem 0;">
@@ -1554,7 +1473,6 @@ with tab_perf:
             )
             st.line_chart(chart_df, height=220, use_container_width=True)
 
-        # Latency Percentiles Table & Session Stats
         c_p1, c_p2 = st.columns([1, 1], gap="medium")
         with c_p1:
             st.html(
@@ -1607,7 +1525,6 @@ with tab_perf:
             else:
                 st.info("No object detections recorded yet in current session.")
 
-        # Interactive Live Hardware Benchmark Runner
         st.html(
             """
             <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #27272a;">
@@ -1763,11 +1680,8 @@ with tab_perf:
             ]
             st.table(class_rows)
 
-
-# ─── Global Footer ────────────────────────────────────────────────────────
-
 st.html(
-    """<div style="margin-top: 12rem; padding-top: 2rem; border-top: 1px solid #27272a; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 3rem;">
+    """<div style="margin-top: 8.4rem; padding-top: 2rem; border-top: 1px solid #27272a; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 3rem;">
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 0.875rem; font-weight: 600; color: #fafafa; font-family: 'Inter', sans-serif;">@</span>
 <div style="font-size: 0.8125rem; font-weight: 600; color: #fafafa;">Smart Vision Monitor</div>
@@ -1775,7 +1689,7 @@ st.html(
 <div style="font-size: 0.75rem; color: #71717a;">Built with PyTorch, OpenCV & Streamlit · MIT License</div>
 </div>
 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-<span class="shadcn-badge">v1.1 · YOLO26n Nano</span>
+<span class="shadcn-badge">v3.1 · YOLO26n Nano</span>
 <span class="shadcn-badge-success">● System Operational</span>
 <span class="shadcn-badge">CPU Inference</span>
 </div>

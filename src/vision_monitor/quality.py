@@ -1,21 +1,3 @@
-"""Detection quality evaluation metrics.
-
-Computes standard object detection quality metrics:
-- IoU (Intersection over Union) between predicted and ground-truth boxes
-- Precision, Recall, F1-score at a given IoU threshold
-- AP (Average Precision) per class via precision-recall curve
-- mAP (mean Average Precision) across all classes
-
-Ground-truth format (JSON):
-    {
-        "image": "bus.jpg",
-        "annotations": [
-            {"class_name": "bus", "bbox": [x1, y1, x2, y2]},
-            {"class_name": "person", "bbox": [x1, y1, x2, y2]}
-        ]
-    }
-"""
-
 from __future__ import annotations
 
 import json
@@ -32,15 +14,12 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class GroundTruth:
-    """A single ground-truth annotation."""
-
     class_name: str
     bbox: BoundingBox
 
 
 @dataclass(frozen=True)
 class MatchResult:
-    """Result of matching predictions against ground truth."""
 
     true_positives: int
     false_positives: int
@@ -53,8 +32,6 @@ class MatchResult:
 
 @dataclass
 class ClassAP:
-    """Average Precision for a single class."""
-
     class_name: str
     ap: float
     precision_values: list[float] = field(default_factory=list)
@@ -65,7 +42,6 @@ class ClassAP:
 
 @dataclass(frozen=True)
 class QualityReport:
-    """Complete quality evaluation report."""
 
     match: MatchResult
     per_class_ap: list[ClassAP]
@@ -74,11 +50,6 @@ class QualityReport:
 
 
 def compute_iou(box_a: BoundingBox, box_b: BoundingBox) -> float:
-    """Compute Intersection over Union between two bounding boxes.
-
-    IoU = Area(Intersection) / Area(Union)
-    Range: 0.0 (no overlap) to 1.0 (perfect overlap).
-    """
     x1 = max(box_a.x1, box_b.x1)
     y1 = max(box_a.y1, box_b.y1)
     x2 = min(box_a.x2, box_b.x2)
@@ -100,13 +71,6 @@ def match_detections(
     ground_truths: list[GroundTruth],
     iou_threshold: float = 0.5,
 ) -> MatchResult:
-    """Match predicted detections to ground-truth annotations.
-
-    Uses greedy matching: predictions sorted by confidence (highest first).
-    Each ground truth can only be matched once.
-    A match requires: same class AND IoU >= threshold.
-    """
-    # Sort predictions by confidence descending
     sorted_preds = sorted(predictions, key=lambda d: d.confidence, reverse=True)
     matched_gt: set[int] = set()
 
@@ -157,10 +121,6 @@ def compute_ap(
     class_name: str,
     iou_threshold: float = 0.5,
 ) -> ClassAP:
-    """Compute Average Precision for a single class.
-
-    Uses the 11-point interpolation method (PASCAL VOC style).
-    """
     class_preds = sorted(
         [p for p in predictions if p.class_name == class_name],
         key=lambda d: d.confidence,
@@ -210,14 +170,12 @@ def compute_ap(
             tp_list.append(0)
             fp_list.append(1)
 
-    # Cumulative sums
     tp_cumsum = np.cumsum(tp_list).astype(float)
     fp_cumsum = np.cumsum(fp_list).astype(float)
 
     precisions = tp_cumsum / (tp_cumsum + fp_cumsum)
     recalls = tp_cumsum / len(class_gts)
 
-    # 11-point interpolation (with small epsilon to avoid IEEE-754 precision drops)
     ap = 0.0
     recall_levels = np.linspace(0, 1, 11)
     for r_level in recall_levels:
@@ -241,10 +199,7 @@ def compute_map(
     ground_truths: list[GroundTruth],
     iou_threshold: float = 0.5,
 ) -> tuple[float, list[ClassAP]]:
-    """Compute mean Average Precision across all classes.
 
-    Returns (mAP, list of per-class AP results).
-    """
     all_classes = set()
     for gt in ground_truths:
         all_classes.add(gt.class_name)
@@ -256,7 +211,6 @@ def compute_map(
         ap = compute_ap(predictions, ground_truths, cls, iou_threshold)
         per_class.append(ap)
 
-    # mAP is computed only over classes that have ground truths
     gt_classes = [c for c in per_class if c.num_ground_truths > 0]
     mean_ap = (
         sum(c.ap for c in gt_classes) / len(gt_classes) if gt_classes else 0.0
@@ -266,7 +220,6 @@ def compute_map(
 
 
 def load_ground_truth(annotation_path: Path | str) -> list[GroundTruth]:
-    """Load ground-truth annotations from a JSON file."""
     path = Path(annotation_path)
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
@@ -294,7 +247,6 @@ def evaluate_quality(
     iou_threshold: float = 0.5,
     num_images: int = 1,
 ) -> QualityReport:
-    """Run full quality evaluation: matching + mAP."""
     match = match_detections(predictions, ground_truths, iou_threshold)
     mean_ap, per_class_ap = compute_map(predictions, ground_truths, iou_threshold)
 

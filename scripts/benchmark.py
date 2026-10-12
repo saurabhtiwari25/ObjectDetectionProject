@@ -1,14 +1,3 @@
-"""Automated Performance Benchmark Script.
-
-Measures:
-- Latency across different input image dimensions (320x320, 640x640)
-- Preprocessing, inference, depth estimation, and total per-frame times
-- Percentiles: p50, p95, p99
-- Throughput (FPS)
-- Peak host RAM consumption
-- Exports structured benchmark results to reports/benchmarks.csv
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -18,7 +7,6 @@ from pathlib import Path
 
 import cv2
 
-# Add src to python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from vision_monitor.config import load_settings

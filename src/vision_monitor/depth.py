@@ -1,15 +1,3 @@
-"""Depth estimation providers and ROI distance calculations.
-
-Supports:
-- Mode A (Software-only): SimulatedDepthProvider generates synthetic depth maps
-  so all downstream alert and pipeline logic can be tested without hardware.
-  `is_simulated` is explicitly True to ensure simulated depth is never misrepresented.
-- Mode B (Hardware-assisted): DepthAIProvider integrates DepthAI 3.x for OAK-D
-  stereo depth camera hardware.
-- Robust statistical distance extraction using the median of valid pixels
-  within the object bounding box ROI to avoid outlier skew.
-"""
-
 from __future__ import annotations
 
 import abc
@@ -33,27 +21,12 @@ def calculate_roi_distance(
     max_valid_depth_m: float = 15.0,
     roi_scale: float = 0.6,
 ) -> float | None:
-    """Extract a representative distance (in meters) for a detected bounding box.
 
-    Design decisions:
-    1. Inner ROI cropping (roi_scale): We sample the central region (e.g. 60%)
-       of the bounding box. This prevents background pixels around the object's
-       silhouette from contaminating the object distance estimate.
-    2. Outlier rejection: Disparity algorithms produce 0.0 for occluded or
-       low-texture pixels, and stereo matching noise can produce random spikes.
-       We filter pixels outside [min_valid_depth_m, max_valid_depth_m].
-    3. Median statistic: Median is chosen over mean because it is robust against
-       boundary depth bleed and remaining noise artifacts.
-
-    Returns:
-        Median distance in meters, or None if no valid depth pixels exist.
-    """
     h_img, w_img = depth_map.shape[:2]
 
     if bbox.width <= 0 or bbox.height <= 0:
         return None
 
-    # Calculate inner ROI to avoid edge background bleeding
     cx, cy = bbox.center
     half_w = (bbox.width * roi_scale) / 2.0
     half_h = (bbox.height * roi_scale) / 2.0
@@ -63,7 +36,6 @@ def calculate_roi_distance(
     raw_x2 = cx + half_w
     raw_y2 = cy + half_h
 
-    # If inner ROI is entirely outside the image bounds, no valid depth
     if raw_x2 <= 0 or raw_y2 <= 0 or raw_x1 >= w_img or raw_y1 >= h_img:
         return None
 
@@ -79,7 +51,6 @@ def calculate_roi_distance(
     if roi.size == 0:
         return None
 
-    # Filter invalid pixels: positive, non-NaN, within sensor range
     valid_mask = np.isfinite(roi) & (roi >= min_valid_depth_m) & (roi <= max_valid_depth_m)
     valid_pixels = roi[valid_mask]
 
@@ -90,29 +61,21 @@ def calculate_roi_distance(
 
 
 class BaseDepthProvider(abc.ABC):
-    """Abstract interface for acquiring depth maps and calculating object distances."""
 
     @property
     @abc.abstractmethod
     def is_simulated(self) -> bool:
-        """Returns True if depth measurements are synthetic/simulated."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_depth_map(self, frame: np.ndarray) -> np.ndarray:
-        """Acquire or compute a depth map aligned with the RGB frame."""
         raise NotImplementedError
 
     def estimate_distance(self, bbox: BoundingBox, depth_map: np.ndarray) -> float | None:
-        """Estimate representative distance for a bounding box from the depth map."""
         return calculate_roi_distance(bbox, depth_map)
 
 
 class SimulatedDepthProvider(BaseDepthProvider):
-    """Software-only (Mode A) depth provider generating synthetic depth data.
-
-    Used when physical OAK-D hardware is absent. Clearly identifies as simulated.
-    """
 
     def __init__(self, default_distance_m: float = 2.0) -> None:
         self._default_distance_m = default_distance_m
@@ -122,15 +85,12 @@ class SimulatedDepthProvider(BaseDepthProvider):
         return True
 
     def get_depth_map(self, frame: np.ndarray) -> np.ndarray:
-        """Create a simulated depth map matching frame dimensions."""
         h, w = frame.shape[:2]
-        # Create a smooth depth gradient simulating an indoor floor-to-ceiling perspective
         depth_map = np.full((h, w), self._default_distance_m, dtype=np.float32)
         return depth_map
 
 
 class DepthAIProvider(BaseDepthProvider):
-    """Hardware-assisted (Mode B) depth provider for OAK-D stereo camera using DepthAI 3.x."""
 
     def __init__(self) -> None:
         self._device = None
@@ -141,21 +101,17 @@ class DepthAIProvider(BaseDepthProvider):
         return False
 
     def initialize(self) -> None:
-        """Connect to OAK-D device and initialize stereo depth pipeline."""
         try:
-            import depthai as dai  # noqa: F401
+            import depthai as dai  
         except ImportError as exc:
             raise DepthError(
                 "DepthAI SDK is not installed. Install with `pip install depthai`."
             ) from exc
 
-        # In Mode B with physical camera, this builds the stereo depth pipeline
         logger.info("Initializing DepthAI stereo depth pipeline...")
-        # Note: Will raise DepthError if no physical OAK-D camera is connected
         self._is_initialized = True
 
     def get_depth_map(self, frame: np.ndarray) -> np.ndarray:
         if not self._is_initialized:
             raise DepthError("DepthAIProvider not initialized. Call initialize() first.")
-        # Device queue read would occur here
         raise DepthError("No OAK-D hardware stream available.")

@@ -1,17 +1,3 @@
-"""FastAPI inference and monitoring service.
-
-Production characteristics:
-- Lifespan management: Loads and warms up the YOLO model once during startup.
-- Non-blocking inference: Offloads CPU-bound vision pipeline work to a worker
-  thread via `asyncio.to_thread` so the async event loop is never starved.
-- Separate health & readiness checks:
-    /health -> Liveness probe (process is running)
-    /ready  -> Readiness probe (model weights are loaded and ready to serve)
-- Structured telemetry: /metrics provides uptime and request latency stats.
-- Security & error handling: Upload size and MIME-type validation, with
-  custom exception handlers preventing internal stack trace leakage.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -34,12 +20,9 @@ from vision_monitor.schemas import Detection
 
 logger = logging.getLogger(__name__)
 
-# Maximum allowed upload file size (15 MB)
 MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp", "image/bmp"}
 
-
-# ─── Response Schemas ───
 
 
 class HealthResponse(BaseModel):
@@ -78,9 +61,6 @@ class MetricsResponse(BaseModel):
     bandwidth_mbps: float = 0.0
 
 
-# ─── State & Telemetry ───
-
-
 class ServiceState:
     def __init__(self) -> None:
         self.pipeline: VisionPipeline | None = None
@@ -106,19 +86,16 @@ class ServiceState:
 
 
 def create_app(settings: AppSettings | None = None) -> FastAPI:
-    """Create and configure the FastAPI application."""
     app_settings = settings or load_settings()
     state = ServiceState()
     state.settings = app_settings
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        # Startup: Load YOLO model weights and initialize pipeline
         logger.info("Initializing Smart Vision Monitor inference service...")
         detector = Detector(app_settings.detector)
         detector.load()
 
-        # Software-only Mode A depth provider
         depth_provider = SimulatedDepthProvider(default_distance_m=1.8)
         pipeline = VisionPipeline(
             detector=detector,
@@ -130,7 +107,6 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         state.pipeline = pipeline
         logger.info("Service readiness achieved: Model loaded and warmed up.")
         yield
-        # Shutdown cleanup
         logger.info("Shutting down Smart Vision Monitor service...")
 
     app = FastAPI(
@@ -140,7 +116,6 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
-    # ─── Global Exception Handler ───
     @app.exception_handler(VisionMonitorError)
     async def handle_vision_error(request, exc: VisionMonitorError):
         logger.error("Vision monitor internal error: %s", exc)
@@ -148,8 +123,6 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "Inference processing error."},
         )
-
-    # ─── Endpoints ───
 
     @app.get("/health", response_model=HealthResponse, tags=["Monitoring"])
     async def health_check() -> HealthResponse:
@@ -218,7 +191,6 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
                 detail="File size exceeds maximum 15MB limit.",
             )
 
-        # Decode image from memory bytes
         np_arr = np.frombuffer(content, np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         if frame is None or frame.size == 0:
@@ -235,7 +207,6 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
                 detail="Pipeline is not initialized.",
             )
 
-        # Offload CPU inference to worker thread so event loop remains unblocked
         pipeline_output = await asyncio.to_thread(state.pipeline.process_frame, frame)
 
         state.record_request(

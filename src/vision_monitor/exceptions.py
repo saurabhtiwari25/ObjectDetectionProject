@@ -1,11 +1,3 @@
-"""Custom exception hierarchy.
-
-Design decisions:
-- A small, flat hierarchy keeps error handling predictable.
-- Each exception carries a human-readable message suitable for logging.
-- API layer will map these to HTTP status codes (Sprint 5).
-"""
-
 from __future__ import annotations
 
 
